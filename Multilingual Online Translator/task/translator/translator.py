@@ -64,7 +64,7 @@ class Language:
         user_agent = 'Mozilla/5.0 AppleWebKit/537.36 Chrome/93.0.4577.82 Safari/537.36'
         result = requests.get(url, headers={'User-Agent': user_agent})
         if result.status_code != 200:
-            raise Exception("Connection error occurred while connecting to the context.reverso.net")
+            raise Exception("Something wrong with your internet connection")
         soup = BeautifulSoup(result.text, 'html.parser')
         trans_tags = soup.find_all('a', class_ = 'translation ltr dict n')
         self.translation = [word.get_text().strip() for word in trans_tags if word.get_text().strip() != '']
@@ -73,6 +73,9 @@ class Language:
         phrase_target_tags = soup.find_all('div', class_ = 'trg ltr')
         self.phrase_source = [phrase.get_text().strip() for phrase in phrase_source_tags]
         self.phrase_target = [phrase.get_text().strip() for phrase in phrase_target_tags]
+
+        if len(self.translation) == 0:
+            raise Exception(f"Sorry, unable to find {word}")
 
         return self.translation, zip(self.phrase_source, self.phrase_target)
 
@@ -143,7 +146,13 @@ if __name__ == '__main__':
 
     l = Language()
     l.sourceLanguage = get_language_index(sys.argv[1])
+    if l.sourceLanguage == -1:
+        print(f"Sorry, the program doesn't support {sys.argv[1]}")
+        exit(1)
     l.targetLanguage = get_language_index(sys.argv[2])
+    if l.targetLanguage == -1:
+        print(f"Sorry, the program doesn't support {sys.argv[2]}")
+        exit(1)
     word = sys.argv[3]
 
 #    print('Hello, welcome to the translator. Translator supports:')
@@ -155,5 +164,9 @@ if __name__ == '__main__':
 #    word = input()
 
 #    l.get_translation(word)
-    l.save_output(word, 1)
+    try:
+        l.save_output(word, 1)
+    except Exception as e:
+        print(e)
+
 #    l.print_output(word, 1)
